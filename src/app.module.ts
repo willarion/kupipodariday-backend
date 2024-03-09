@@ -11,9 +11,13 @@ import { Wish } from './wishes/entities/wish.entity';
 import { Wishlist } from './wishlists/entities/wishlist.entity';
 import { Offer } from './offers/entities/offer.entity';
 import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Makes the ConfigService globally available
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',

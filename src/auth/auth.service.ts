@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import { authPayloadDTO } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
+import { SearchKeys } from 'src/models/enums';
 
 @Injectable()
 export class AuthService {
@@ -15,21 +16,21 @@ export class AuthService {
     username,
     password,
   }: authPayloadDTO): Promise<Partial<User>> {
-    const user = await this.usersService.findOne(username);
+    const user = await this.usersService.findOne(
+      SearchKeys.USERNAME,
+      username,
+      true,
+    );
 
     if (user && user.password === password) {
-      const { password, ...result } = user;
-      return result;
-      // const payload = { username: user.username, sub: user.id };
-      // return {
-      //   access_token: this.jwtService.sign(payload),
-      // };
+      delete user.password;
+      return user;
     }
     return null;
   }
 
   auth(user: Partial<User>) {
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, id: user.id };
     return {
       access_token: this.jwtService.sign(payload),
     };

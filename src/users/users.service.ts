@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-// import { UpdateUserDto } from './dto/update-user.dto';
+import { SearchKeys } from 'src/models/enums';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+type SearchKey = SearchKeys.ID | SearchKeys.USERNAME | SearchKeys.EMAIL;
 
 @Injectable()
 export class UsersService {
@@ -12,14 +15,25 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findOne(username: string) {
+  async findOne(
+    key: SearchKey,
+    value: string | number,
+    keepPassword: boolean = false,
+  ) {
     const user = await this.usersRepository.findOne({
       where: {
-        username,
+        [key]: value,
       },
     });
 
-    return user;
+    if (user) {
+      if (!keepPassword) {
+        delete user.password;
+      }
+      return user;
+    }
+
+    return null;
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<Partial<User>> {
@@ -27,19 +41,25 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  // findAll() {
-  //   return `This action returns all users`;
-  // }
+  findAll(): Promise<User[]> {
+    return this.usersRepository.find();
+  }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
+  updateById(id: number, updateUserDto: UpdateUserDto) {
+    return this.usersRepository.update({ id }, updateUserDto);
+  }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  async findUserByUsernameOrEmail(query: string) {
+    const user = await this.usersRepository.findOne({
+      where: [{ email: query }, { username: query }],
+    });
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+    if (user) {
+      delete user.password;
+
+      return user;
+    }
+
+    return null;
+  }
 }

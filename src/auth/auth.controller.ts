@@ -16,7 +16,8 @@ export class AuthController {
   @Post('signin')
   @UseGuards(LocalGuard)
   async login(@Body() authPayload: authPayloadDTO) {
-    const tokenObj = await this.authService.auth(authPayload);
+    const user = await this.authService.validateUser(authPayload);
+    const tokenObj = await this.authService.auth(user);
     return tokenObj;
   }
 
