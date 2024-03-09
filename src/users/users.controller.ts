@@ -1,16 +1,14 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   Req,
+  Post,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { Request } from 'express';
@@ -21,11 +19,6 @@ import { FindUserDto } from './dto/find-user.dto';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  // @Post()
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
 
   // only for testing
   // TODO delete
@@ -63,16 +56,30 @@ export class UsersController {
     }
   }
 
-  @Get('/find')
-  findUserByUsernameOrEmail(@Body() findUserDto: FindUserDto) {
-    return this.usersService.findUserByUsernameOrEmail(findUserDto.query);
+  @UseGuards(JwtGuard)
+  @Get('me/wishes')
+  getMyWishes(@Req() req: any) {
+    return this.usersService.findUserWishes(SearchKeys.ID, req.user.id);
   }
 
+  @UseGuards(JwtGuard)
+  @Post('/find')
+  findUsersByUsernameOrEmail(@Body() findUserDto: FindUserDto) {
+    return this.usersService.findUsersByUsernameOrEmail(findUserDto.query);
+  }
+
+  @UseGuards(JwtGuard)
   @Get(':username')
   async getUserByUsername(@Param('username') username: string) {
     const user = await this.usersService.findOne(SearchKeys.USERNAME, username);
     delete user.email;
 
     return user;
+  }
+
+  @UseGuards(JwtGuard)
+  @Get(':username/wishes')
+  getUserWishes(@Param('username') username: string) {
+    return this.usersService.findUserWishes(SearchKeys.USERNAME, username);
   }
 }

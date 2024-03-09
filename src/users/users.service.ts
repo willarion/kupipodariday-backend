@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchKeys } from 'src/models/enums';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { cleanUserResult } from './users.utils';
+import { Wish } from 'src/wishes/entities/wish.entity';
 
 type SearchKey = SearchKeys.ID | SearchKeys.USERNAME | SearchKeys.EMAIL;
 
@@ -19,21 +21,14 @@ export class UsersService {
     key: SearchKey,
     value: string | number,
     keepPassword: boolean = false,
-  ) {
+  ): Promise<User | null> {
     const user = await this.usersRepository.findOne({
       where: {
         [key]: value,
       },
     });
 
-    if (user) {
-      if (!keepPassword) {
-        delete user.password;
-      }
-      return user;
-    }
-
-    return null;
+    return cleanUserResult(user, keepPassword);
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<Partial<User>> {
@@ -49,17 +44,32 @@ export class UsersService {
     return this.usersRepository.update({ id }, updateUserDto);
   }
 
-  async findUserByUsernameOrEmail(query: string) {
-    const user = await this.usersRepository.findOne({
-      where: [{ email: query }, { username: query }],
+  async findUsersByUsernameOrEmail(query: string): Promise<User[] | null> {
+    const users = await this.usersRepository.find({
+      where: [{ email: Like(`%${query}%`) }, { username: Like(`%${query}%`) }],
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        about: true,
+        avatar: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    if (user) {
-      delete user.password;
+    return users;
+  }
 
-      return user;
-    }
+  async findUserWishes(
+    key: SearchKey,
+    value: string | number,
+  ): Promise<Wish[] | null> {
+    const userWithWishes = await this.usersRepository.findOne({
+      where: { [key]: value },
+      relations: ['wishes'],
+    });
 
-    return null;
+    return userWithWishes.wishes || null;
   }
 }

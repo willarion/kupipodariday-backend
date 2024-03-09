@@ -8,6 +8,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Offer } from '../../offers/entities/offer.entity';
+import { Wish } from 'src/wishes/entities/wish.entity';
 
 @Entity()
 @Unique(['username', 'email'])
@@ -30,8 +31,8 @@ export class User {
   @Column()
   password: string;
 
-  @OneToMany(() => Offer, (offer) => offer.user)
-  wishes: Offer[];
+  @OneToMany(() => Wish, (wishes) => wishes.owner)
+  wishes: Wish[];
 
   @OneToMany(() => Offer, (offer) => offer.user)
   offers: Offer[];
