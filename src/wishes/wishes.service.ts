@@ -1,26 +1,114 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Wish } from './entities/wish.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class WishesService {
-  create(createWishDto: CreateWishDto) {
-    return 'This action adds a new wish';
+  constructor(
+    @InjectRepository(Wish)
+    private wishesRepository: Repository<Wish>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
+
+  async create(userId: number, createWishDto: CreateWishDto) {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) {
+      // TODO update the error
+      throw new Error('User not found');
+    }
+
+    const wish = this.wishesRepository.create(createWishDto);
+    wish.owner = user;
+    return this.wishesRepository.save(wish);
   }
 
-  findAll() {
-    return `This action returns all wishes`;
+  async findLatestWishByUserId(userId: number): Promise<Wish | undefined> {
+    return this.wishesRepository.findOne({
+      where: { owner: { id: userId } },
+      order: { createdAt: 'DESC' },
+      relations: {
+        owner: true,
+        offers: true,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} wish`;
+  async findOneById(userId: number, wishId: number): Promise<Wish | undefined> {
+    return this.wishesRepository.findOne({
+      where: { owner: { id: userId }, id: wishId },
+      relations: {
+        owner: true,
+        offers: true,
+      },
+    });
   }
 
-  update(id: number, updateWishDto: UpdateWishDto) {
-    return `This action updates a #${id} wish`;
+  async findTopWishes(): Promise<Wish[] | undefined> {
+    return this.wishesRepository.find({
+      order: { copied: 'ASC' },
+      take: 10,
+      relations: {
+        owner: true,
+        offers: true,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} wish`;
+  async updateById(
+    userId: number,
+    wishId: number,
+    updateWishDto: UpdateWishDto,
+  ) {
+    const result = await this.wishesRepository.update(
+      { id: wishId, owner: { id: userId } },
+      updateWishDto,
+    );
+
+    return result;
+  }
+
+  async deleteOneById(userId: number, wishId: number) {
+    const result = await this.wishesRepository.delete({
+      id: wishId,
+      owner: { id: userId },
+    });
+
+    return result;
+  }
+
+  async copyWish(wishId: number, userId: number): Promise<Wish> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) {
+      // TODO update the error
+      throw new Error('User not found');
+    }
+
+    const wishToCopy = await this.wishesRepository.findOneBy({ id: wishId });
+
+    if (!wishToCopy) {
+      throw new NotFoundException(`Wish with ID "${wishId}" not found.`);
+    }
+
+    await this.wishesRepository.increment({ id: wishId }, 'copied', 1);
+
+    const newWishDto: CreateWishDto = {
+      name: wishToCopy.name,
+      link: wishToCopy.link,
+      image: wishToCopy.image,
+      price: wishToCopy.price,
+      description: wishToCopy.description,
+    };
+
+    const newWish = this.wishesRepository.create(newWishDto);
+    newWish.owner = user;
+
+    await this.wishesRepository.save(newWish);
+
+    return newWish;
   }
 }
