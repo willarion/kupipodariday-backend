@@ -15,7 +15,8 @@ export class Offer {
   id: number;
 
   @ManyToOne(() => User, (user) => user.id)
-  user: User;
+  user: User['id'];
+  // user: Partial<User>;
 
   @ManyToOne(() => Wish, (wish) => wish.offers)
   item: Wish;

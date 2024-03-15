@@ -5,7 +5,6 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchKeys } from 'src/models/enums';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { cleanUserResult } from './users.utils';
 import { Wish } from 'src/wishes/entities/wish.entity';
 
 type SearchKey = SearchKeys.ID | SearchKeys.USERNAME | SearchKeys.EMAIL;
@@ -20,15 +19,25 @@ export class UsersService {
   async findOne(
     key: SearchKey,
     value: string | number,
-    keepPassword: boolean = false,
+    returnHiddenFields: boolean = false,
   ): Promise<User | null> {
-    const user = await this.usersRepository.findOne({
-      where: {
-        [key]: value,
-      },
-    });
+    // const user = await this.usersRepository.findOne({
+    //   where: {
+    //     [key]: value,
+    //   },
+    // });
 
-    return cleanUserResult(user, keepPassword);
+    const query = this.usersRepository
+      .createQueryBuilder('user')
+      .where(`user.${key} = :value`, { value });
+
+    if (returnHiddenFields) {
+      query.addSelect(['user.password', 'user.email']);
+    }
+
+    const user = await query.getOne();
+
+    return user;
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<Partial<User>> {

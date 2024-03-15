@@ -4,7 +4,6 @@ import { authPayloadDTO } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
 import { SearchKeys } from 'src/models/enums';
-import { cleanUserResult } from 'src/users/users.utils';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +23,7 @@ export class AuthService {
     );
 
     if (user && user.password === password) {
-      return cleanUserResult(user);
+      return user;
     }
     return null;
   }

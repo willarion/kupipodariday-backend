@@ -72,7 +72,6 @@ export class UsersController {
   @Get(':username')
   async getUserByUsername(@Param('username') username: string) {
     const user = await this.usersService.findOne(SearchKeys.USERNAME, username);
-    delete user.email;
 
     return user;
   }

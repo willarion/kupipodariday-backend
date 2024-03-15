@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Offer } from '../../offers/entities/offer.entity';
 import { Wish } from 'src/wishes/entities/wish.entity';
+import { Wishlist } from 'src/wishlists/entities/wishlist.entity';
 
 @Entity()
 @Unique(['username', 'email'])
@@ -25,10 +26,10 @@ export class User {
   @Column({ default: 'https://i.pravatar.cc/300' })
   avatar: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, select: false })
   email: string;
 
-  @Column()
+  @Column({ select: false })
   password: string;
 
   @OneToMany(() => Wish, (wishes) => wishes.owner)
@@ -37,8 +38,8 @@ export class User {
   @OneToMany(() => Offer, (offer) => offer.user)
   offers: Offer[];
 
-  @OneToMany(() => Offer, (offer) => offer.user)
-  wishlists: Offer[];
+  @OneToMany(() => Wishlist, (wishlist) => wishlist.owner)
+  wishlists: Wishlist[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
