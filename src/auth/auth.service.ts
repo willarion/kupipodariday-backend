@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { authPayloadDTO } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -26,13 +30,21 @@ export class AuthService {
     if (user && (await bcrypt.compare(password, user.password))) {
       return { username: user.username, id: user.id };
     }
-    return null;
+    throw new UnauthorizedException('Username or password is incorrect.');
   }
 
   auth(user: Partial<User>) {
     const payload = { username: user.username, id: user.id };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+    try {
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+      return {
+        access_token: accessToken,
+      };
+    } catch (error) {
+      // Log the error and handle it appropriately
+      throw new InternalServerErrorException(
+        'Failed to generate access token.',
+      );
+    }
   }
 }

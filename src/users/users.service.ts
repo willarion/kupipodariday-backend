@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -35,8 +40,20 @@ export class UsersService {
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<Partial<User>> {
-    const user = await this.usersRepository.create(createUserDto);
-    return await this.usersRepository.save(user);
+    try {
+      const user = this.usersRepository.create(createUserDto);
+      await this.usersRepository.save(user);
+      const { username, id } = user;
+      return { username, id };
+    } catch (error) {
+      // PostgreSQL unique violation error code
+      if (error.code === '23505') {
+        throw new ConflictException(
+          'A user with the given username or email already exists.',
+        );
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
   findAll(): Promise<User[]> {
@@ -68,11 +85,15 @@ export class UsersService {
     key: SearchKey,
     value: string | number,
   ): Promise<Wish[] | null> {
-    const userWithWishes = await this.usersRepository.findOne({
+    const user = await this.usersRepository.findOne({
       where: { [key]: value },
       relations: ['wishes'],
     });
 
-    return userWithWishes.wishes || null;
+    if (!user) {
+      throw new NotFoundException(`User not found.`);
+    }
+
+    return user.wishes || [];
   }
 }

@@ -10,6 +10,7 @@ import {
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import ExtendedReq from 'src/models/ExtendedReq';
 
 @Controller('offers')
 export class OffersController {
@@ -17,7 +18,7 @@ export class OffersController {
 
   @UseGuards(JwtGuard)
   @Post()
-  create(@Req() req: any, @Body() createOfferDto: CreateOfferDto) {
+  create(@Req() req: ExtendedReq, @Body() createOfferDto: CreateOfferDto) {
     return this.offersService.create(req.user.id, createOfferDto);
     // TODO return success message not the full object
   }

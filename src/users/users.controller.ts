@@ -11,33 +11,27 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { Request } from 'express';
 import { SearchKeys } from 'src/models/enums';
 import * as bcrypt from 'bcrypt';
 import { FindUserDto } from './dto/find-user.dto';
+import ExtendedReq from 'src/models/ExtendedReq';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // only for testing
-  // TODO delete
-  @UseGuards(JwtGuard)
-  @Get()
-  findAll(@Req() req: Request) {
-    console.log('req', req.user);
-    return this.usersService.findAll();
-  }
-
   @UseGuards(JwtGuard)
   @Get('me')
-  getMyProfile(@Req() req: any) {
+  getMyProfile(@Req() req: ExtendedReq) {
     return this.usersService.findOne(SearchKeys.ID, req.user.id);
   }
 
   @UseGuards(JwtGuard)
   @Patch('me')
-  async updateMyProfile(@Req() req: any, @Body() updateUserDto: UpdateUserDto) {
+  async updateMyProfile(
+    @Req() req: ExtendedReq,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     if (updateUserDto.password) {
       const hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
       updateUserDto.password = hashedPassword;
@@ -51,14 +45,13 @@ export class UsersController {
     if (updateResult.affected > 0) {
       return { message: 'Update was successful.' };
     } else {
-      // TODO add error
       return { message: 'No rows were updated.' };
     }
   }
 
   @UseGuards(JwtGuard)
   @Get('me/wishes')
-  getMyWishes(@Req() req: any) {
+  getMyWishes(@Req() req: ExtendedReq) {
     return this.usersService.findUserWishes(SearchKeys.ID, req.user.id);
   }
 

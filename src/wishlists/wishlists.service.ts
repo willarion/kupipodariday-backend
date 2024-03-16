@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { Wishlist } from './entities/wishlist.entity';
@@ -21,8 +25,7 @@ export class WishlistsService {
   async create(userId: number, createWishlistDto: CreateWishlistDto) {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) {
-      // TODO update the error
-      throw new NotFoundException('One or more items do not exist');
+      throw new NotFoundException('User not found.');
     }
     const { itemsId, ...rest } = createWishlistDto;
 
@@ -44,30 +47,42 @@ export class WishlistsService {
 
     wishlist.owner = user;
 
-    await this.wishlistsRepository.save(wishlist);
-    // TODO update the error
+    try {
+      await this.wishlistsRepository.save(wishlist);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to create wishlist.');
+    }
 
     return wishlist;
   }
 
   async findAll() {
-    const wishlists = this.wishlistsRepository.find({
-      relations: {
-        owner: true,
-        items: true,
-      },
-    });
-    return wishlists;
+    try {
+      const wishlists = await this.wishlistsRepository.find({
+        relations: {
+          owner: true,
+          items: true,
+        },
+      });
+      return wishlists;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to retrieve wishlists.');
+    }
   }
 
   async findOneById(id) {
-    const wishlist = this.wishlistsRepository.find({
+    const wishlist = await this.wishlistsRepository.findOne({
       where: { id },
       relations: {
         owner: true,
         items: true,
       },
     });
+
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID "${id}" not found.`);
+    }
+
     return wishlist;
   }
 
@@ -85,29 +100,49 @@ export class WishlistsService {
       },
     });
 
+    if (wishes.length !== itemsId.length) {
+      throw new NotFoundException('One or more items do not exist.');
+    }
+
     const wishlist = await this.wishlistsRepository.findOne({
       where: { id: wishId, owner: { id: userId } },
     });
 
     if (!wishlist) {
-      throw new NotFoundException(`Wishlist not found.`);
+      throw new NotFoundException(`Wishlist with ID "${wishId}" not found.`);
     }
 
     Object.assign(wishlist, rest);
 
     wishlist.items = wishes;
 
-    const result = await this.wishlistsRepository.save(wishlist);
-
-    return result;
+    try {
+      return await this.wishlistsRepository.save(wishlist);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to update wishlist with ID "${wishId}".`,
+      );
+    }
   }
 
   async deleteOneById(userId: number, wishId: number) {
-    const result = await this.wishlistsRepository.delete({
-      id: wishId,
-      owner: { id: userId },
+    const wishlist = await this.wishlistsRepository.findOne({
+      where: {
+        id: wishId,
+        owner: { id: userId },
+      },
     });
 
-    return result;
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID "${wishId}" not found.`);
+    }
+
+    try {
+      return await this.wishlistsRepository.delete(wishId);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to delete wishlist with ID "${wishId}".`,
+      );
+    }
   }
 }

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,8 +23,7 @@ export class WishesService {
   async create(userId: number, createWishDto: CreateWishDto) {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) {
-      // TODO update the error
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     const wish = this.wishesRepository.create(createWishDto);
@@ -28,7 +32,7 @@ export class WishesService {
   }
 
   async findLatestWishByUserId(userId: number): Promise<Wish | undefined> {
-    return this.wishesRepository.findOne({
+    const wish = await this.wishesRepository.findOne({
       where: { owner: { id: userId } },
       order: { createdAt: 'DESC' },
       relations: {
@@ -36,16 +40,30 @@ export class WishesService {
         offers: true,
       },
     });
+
+    if (!wish) {
+      throw new NotFoundException(`No wishes found for user ID "${userId}".`);
+    }
+
+    return wish;
   }
 
   async findOneById(userId: number, wishId: number): Promise<Wish | undefined> {
-    return this.wishesRepository.findOne({
+    const wish = await this.wishesRepository.findOne({
       where: { owner: { id: userId }, id: wishId },
       relations: {
         owner: true,
         offers: true,
       },
     });
+
+    if (!wish) {
+      throw new NotFoundException(
+        `Wish with ID "${wishId}" for user ID "${userId}" not found.`,
+      );
+    }
+
+    return wish;
   }
 
   async findTopWishes(): Promise<Wish[] | undefined> {
@@ -75,12 +93,12 @@ export class WishesService {
     });
 
     if (!wish) {
-      throw new Error('No wish found');
+      throw new NotFoundException('No wish found');
     }
 
     if (updateWishDto.price && wish.offers.length > 0) {
-      throw new Error(
-        'Price cant be changed, because people made offers already',
+      throw new BadRequestException(
+        "Price can't be changed because people have already made offers",
       );
     }
 
@@ -91,18 +109,32 @@ export class WishesService {
   }
 
   async deleteOneById(userId: number, wishId: number) {
-    const result = await this.wishesRepository.delete({
-      id: wishId,
-      owner: { id: userId },
+    const wish = await this.wishesRepository.findOne({
+      where: { id: wishId, owner: { id: userId } },
     });
-    return result;
+
+    if (!wish) {
+      throw new NotFoundException(`Wish with ID "${wishId}" not found`);
+    }
+
+    try {
+      const result = await this.wishesRepository.delete({
+        id: wishId,
+        owner: { id: userId },
+      });
+      return result;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'An error occurred while saving the new wish.',
+      );
+    }
   }
 
   async copyWish(wishId: number, userId: number): Promise<Wish> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) {
-      // TODO update the error
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     const wishToCopy = await this.wishesRepository.findOneBy({ id: wishId });
@@ -111,21 +143,28 @@ export class WishesService {
       throw new NotFoundException(`Wish with ID "${wishId}" not found.`);
     }
 
-    await this.wishesRepository.increment({ id: wishId }, 'copied', 1);
+    try {
+      await this.wishesRepository.increment({ id: wishId }, 'copied', 1);
 
-    const newWishDto: CreateWishDto = {
-      name: wishToCopy.name,
-      link: wishToCopy.link,
-      image: wishToCopy.image,
-      price: wishToCopy.price,
-      description: wishToCopy.description,
-    };
+      const newWishDto: CreateWishDto = {
+        name: wishToCopy.name,
+        link: wishToCopy.link,
+        image: wishToCopy.image,
+        price: wishToCopy.price,
+        description: wishToCopy.description,
+      };
 
-    const newWish = this.wishesRepository.create(newWishDto);
-    newWish.owner = user;
+      const newWish = this.wishesRepository.create(newWishDto);
+      newWish.owner = user;
 
-    await this.wishesRepository.save(newWish);
+      await this.wishesRepository.save(newWish);
 
-    return newWish;
+      return newWish;
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException(
+        'An error occurred while saving the new wish.',
+      );
+    }
   }
 }

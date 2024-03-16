@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
@@ -19,8 +24,7 @@ export class OffersService {
   async create(userId: number, createOfferDto: CreateOfferDto) {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) {
-      // TODO update the error
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     const wish = await this.wishesRepository.findOne({
@@ -34,19 +38,21 @@ export class OffersService {
     });
 
     if (!wish) {
-      throw new Error('wish not found');
+      throw new NotFoundException('Wish not found');
     }
     if (wish.owner.id === userId) {
-      throw new Error('You cannot put offer for your own wish');
+      throw new BadRequestException('You cannot put offer for your own wish');
     }
     if (wish.price === wish.raised) {
-      throw new Error('Offer cant be made: money already collected');
+      throw new BadRequestException(
+        "Offer can't be made: money already collected",
+      );
     }
 
     const newRaised = wish.raised + createOfferDto.amount;
 
     if (newRaised > wish.price) {
-      throw new Error('Offer cant be made: offer is too big');
+      throw new BadRequestException("Offer can't be made: offer is too big");
     }
 
     const updatedWish = await this.wishesRepository.save({
@@ -55,7 +61,7 @@ export class OffersService {
     });
 
     if (!updatedWish) {
-      return new Error('failed to update the wish');
+      throw new InternalServerErrorException('Failed to update the wish');
     }
 
     const offer = this.offersRepository.create({
@@ -63,7 +69,11 @@ export class OffersService {
       item: createOfferDto.itemId,
     });
     offer.user = user.id;
-    return this.offersRepository.save(offer);
+    const newOffer = await this.offersRepository.save(offer);
+    if (!offer || !newOffer) {
+      throw new InternalServerErrorException('Failed to created offer');
+    }
+    return newOffer;
   }
 
   async findAll() {
@@ -73,7 +83,6 @@ export class OffersService {
       .leftJoinAndSelect('user.wishlists', 'wishlists')
       .getMany();
 
-    // TODO error handling
     return offers;
   }
 
@@ -84,7 +93,10 @@ export class OffersService {
       .leftJoinAndSelect('offer.user', 'user')
       .leftJoinAndSelect('user.wishlists', 'wishlists')
       .getOne();
-    // TODO add error handler
+
+    if (!offer) {
+      throw new NotFoundException(`Offer with ID ${id} not found`);
+    }
     return offer;
   }
 }

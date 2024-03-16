@@ -13,6 +13,7 @@ import { WishlistsService } from './wishlists.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import ExtendedReq from 'src/models/ExtendedReq';
 
 @Controller('wishlists')
 export class WishlistsController {
@@ -20,7 +21,10 @@ export class WishlistsController {
 
   @UseGuards(JwtGuard)
   @Post()
-  create(@Req() req: any, @Body() createWishlistDto: CreateWishlistDto) {
+  create(
+    @Req() req: ExtendedReq,
+    @Body() createWishlistDto: CreateWishlistDto,
+  ) {
     return this.wishlistsService.create(req.user.id, createWishlistDto);
   }
 
@@ -38,7 +42,7 @@ export class WishlistsController {
   @UseGuards(JwtGuard)
   @Patch(':id')
   async updateOneById(
-    @Req() req: any,
+    @Req() req: ExtendedReq,
     @Param('id') wishId: number,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
@@ -51,14 +55,13 @@ export class WishlistsController {
     if (updatedWishlist) {
       return updatedWishlist;
     } else {
-      // TODO add error
       return { message: 'No rows were updated.' };
     }
   }
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  async deleteOneById(@Req() req: any, @Param('id') wishId: number) {
+  async deleteOneById(@Req() req: ExtendedReq, @Param('id') wishId: number) {
     const deleteResult = await this.wishlistsService.deleteOneById(
       req.user.id,
       wishId,
@@ -67,7 +70,6 @@ export class WishlistsController {
     if (deleteResult.affected > 0) {
       return { message: 'delete was successful.' };
     } else {
-      // TODO add error
       return { message: 'No rows were deleted.' };
     }
   }
