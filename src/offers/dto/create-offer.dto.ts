@@ -1,19 +1,14 @@
-import {
-  IsDecimal,
-  IsNotEmpty,
-  Min,
-  IsBoolean,
-  IsPositive,
-} from 'class-validator';
+import { IsNotEmpty, Min, IsBoolean, IsDecimal } from 'class-validator';
 
 export class CreateOfferDto {
   @IsNotEmpty()
-  @IsPositive()
+  @Min(0)
+  @IsDecimal()
   amount: number;
 
   @IsNotEmpty()
-  @IsDecimal()
   @Min(0)
+  @IsDecimal()
   itemId: number;
 
   @IsBoolean()

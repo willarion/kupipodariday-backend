@@ -21,12 +21,6 @@ export class UsersService {
     value: string | number,
     returnHiddenFields: boolean = false,
   ): Promise<User | null> {
-    // const user = await this.usersRepository.findOne({
-    //   where: {
-    //     [key]: value,
-    //   },
-    // });
-
     const query = this.usersRepository
       .createQueryBuilder('user')
       .where(`user.${key} = :value`, { value });

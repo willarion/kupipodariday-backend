@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Offer } from '../../offers/entities/offer.entity';
+import NumericTransformer from './wish.utils';
 
 @Entity()
 export class Wish {
@@ -24,10 +25,21 @@ export class Wish {
   @Column()
   image: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: new NumericTransformer(),
+  })
   price: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: new NumericTransformer(),
+    default: 0,
+  })
   raised: number;
 
   @ManyToOne(() => User, (user) => user.wishes)

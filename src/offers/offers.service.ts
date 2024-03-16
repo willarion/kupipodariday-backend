@@ -23,8 +23,14 @@ export class OffersService {
       throw new Error('User not found');
     }
 
-    const wish = await this.wishesRepository.findOneBy({
-      id: createOfferDto.itemId,
+    const wish = await this.wishesRepository.findOne({
+      where: {
+        id: createOfferDto.itemId,
+      },
+      relations: {
+        owner: true,
+        offers: true,
+      },
     });
 
     if (!wish) {
@@ -34,18 +40,23 @@ export class OffersService {
       throw new Error('You cannot put offer for your own wish');
     }
     if (wish.price === wish.raised) {
-      throw new Error('Offer cant be made');
+      throw new Error('Offer cant be made: money already collected');
     }
 
     const newRaised = wish.raised + createOfferDto.amount;
+
     if (newRaised > wish.price) {
-      createOfferDto.amount = createOfferDto.amount - (newRaised - wish.price);
+      throw new Error('Offer cant be made: offer is too big');
     }
 
-    this.wishesRepository.save({
+    const updatedWish = await this.wishesRepository.save({
       ...wish,
-      raised: Math.min(wish.raised + createOfferDto.amount, wish.price),
+      raised: newRaised,
     });
+
+    if (!updatedWish) {
+      return new Error('failed to update the wish');
+    }
 
     const offer = this.offersRepository.create({
       ...createOfferDto,

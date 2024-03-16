@@ -64,9 +64,14 @@ export class WishesService {
     wishId: number,
     updateWishDto: UpdateWishDto,
   ) {
-    const wish = await this.wishesRepository.findOneBy({
-      id: wishId,
-      owner: { id: userId },
+    const wish = await this.wishesRepository.findOne({
+      where: {
+        id: wishId,
+        owner: { id: userId },
+      },
+      relations: {
+        offers: true,
+      },
     });
 
     if (!wish) {

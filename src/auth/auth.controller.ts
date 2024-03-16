@@ -23,12 +23,12 @@ export class AuthController {
 
   @Post('signup')
   async signup(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.createUser(createUserDto);
-    const { username, password } = user;
-
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     createUserDto.password = hashedPassword;
 
-    return this.authService.auth({ username, password });
+    const user = await this.usersService.createUser(createUserDto);
+    const { username, id } = user;
+
+    return this.authService.auth({ username, id });
   }
 }

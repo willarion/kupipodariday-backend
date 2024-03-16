@@ -4,6 +4,7 @@ import { authPayloadDTO } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
 import { SearchKeys } from 'src/models/enums';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +23,8 @@ export class AuthService {
       true,
     );
 
-    if (user && user.password === password) {
-      return user;
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return { username: user.username, id: user.id };
     }
     return null;
   }
