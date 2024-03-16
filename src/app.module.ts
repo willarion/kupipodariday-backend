@@ -16,7 +16,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Makes the ConfigService globally available
+      isGlobal: true,
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',

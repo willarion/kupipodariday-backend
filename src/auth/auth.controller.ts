@@ -6,7 +6,7 @@ import { LocalGuard } from './guards/local.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 
-@Controller('auth')
+@Controller('')
 export class AuthController {
   constructor(
     private authService: AuthService,
