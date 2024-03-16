@@ -71,7 +71,7 @@ export class WishesController {
       updateWishDto,
     );
 
-    if (updateResult.affected > 0) {
+    if (updateResult) {
       return { message: 'Update was successful.' };
     } else {
       // TODO add error

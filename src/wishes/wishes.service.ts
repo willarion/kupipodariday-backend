@@ -64,12 +64,25 @@ export class WishesService {
     wishId: number,
     updateWishDto: UpdateWishDto,
   ) {
-    const result = await this.wishesRepository.update(
-      { id: wishId, owner: { id: userId } },
-      updateWishDto,
-    );
+    const wish = await this.wishesRepository.findOneBy({
+      id: wishId,
+      owner: { id: userId },
+    });
 
-    return result;
+    if (!wish) {
+      throw new Error('No wish found');
+    }
+
+    if (updateWishDto.price && wish.offers.length > 0) {
+      throw new Error(
+        'Price cant be changed, because people made offers already',
+      );
+    }
+
+    return await this.wishesRepository.save({
+      ...wish,
+      ...updateWishDto,
+    });
   }
 
   async deleteOneById(userId: number, wishId: number) {
@@ -77,7 +90,6 @@ export class WishesService {
       id: wishId,
       owner: { id: userId },
     });
-
     return result;
   }
 

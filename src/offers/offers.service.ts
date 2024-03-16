@@ -23,13 +23,34 @@ export class OffersService {
       throw new Error('User not found');
     }
 
-    const item = this.wishesRepository.findOneBy({ id: createOfferDto.itemId });
+    const wish = await this.wishesRepository.findOneBy({
+      id: createOfferDto.itemId,
+    });
 
-    if (!item) {
-      throw new Error('Itme not found');
+    if (!wish) {
+      throw new Error('wish not found');
+    }
+    if (wish.owner.id === userId) {
+      throw new Error('You cannot put offer for your own wish');
+    }
+    if (wish.price === wish.raised) {
+      throw new Error('Offer cant be made');
     }
 
-    const offer = this.offersRepository.create(createOfferDto);
+    const newRaised = wish.raised + createOfferDto.amount;
+    if (newRaised > wish.price) {
+      createOfferDto.amount = createOfferDto.amount - (newRaised - wish.price);
+    }
+
+    this.wishesRepository.save({
+      ...wish,
+      raised: Math.min(wish.raised + createOfferDto.amount, wish.price),
+    });
+
+    const offer = this.offersRepository.create({
+      ...createOfferDto,
+      item: createOfferDto.itemId,
+    });
     offer.user = user.id;
     return this.offersRepository.save(offer);
   }
