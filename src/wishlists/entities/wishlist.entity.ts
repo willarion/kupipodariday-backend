@@ -13,7 +13,6 @@ export class Wishlist extends Base {
   name: string;
 
   @Column({ length: 1500, default: '' })
-  @IsNotEmpty({ message: 'Description is required' })
   @IsString()
   @Length(1, 1500, {
     message: 'Description must be between 1 and 1500 characters',

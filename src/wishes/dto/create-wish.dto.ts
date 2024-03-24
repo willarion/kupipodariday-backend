@@ -1,5 +1,5 @@
 import {
-  IsDecimal,
+  IsNumber,
   IsNotEmpty,
   IsString,
   IsUrl,
@@ -24,7 +24,7 @@ export class CreateWishDto {
   image: string;
 
   @IsNotEmpty()
-  @IsDecimal()
+  @IsNumber()
   @Min(0)
   price: number;
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -11,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { SearchKeys } from 'src/models/enums';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Wish } from 'src/wishes/entities/wish.entity';
+import { defaultValues, saveWithValidation } from 'src/utils/helpers';
 
 type SearchKey = SearchKeys.ID | SearchKeys.USERNAME | SearchKeys.EMAIL;
 
@@ -41,11 +43,20 @@ export class UsersService {
 
   async createUser(createUserDto: CreateUserDto): Promise<Partial<User>> {
     try {
-      const user = this.usersRepository.create(createUserDto);
-      await this.usersRepository.save(user);
+      const { about, ...otherData } = createUserDto;
+      const user = this.usersRepository.create({
+        ...otherData,
+        about: about && about.trim() ? about : defaultValues.about,
+      });
+
+      await saveWithValidation(user, (i) => this.usersRepository.save(i));
+
       const { username, id } = user;
       return { username, id };
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       // PostgreSQL unique violation error code
       if (error.code === '23505') {
         throw new ConflictException(

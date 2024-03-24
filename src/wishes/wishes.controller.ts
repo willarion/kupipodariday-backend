@@ -28,10 +28,10 @@ export class WishesController {
   @UseGuards(JwtGuard)
   @Get('last')
   async getLatestWish(@Req() req: ExtendedReq) {
-    const latestWish = await this.wishesService.findLatestWishByUserId(
+    const latestWishes = await this.wishesService.findLatestWishesByUserId(
       req.user.id,
     );
-    return latestWish;
+    return latestWishes;
   }
 
   @Get('top')
@@ -42,8 +42,8 @@ export class WishesController {
 
   @UseGuards(JwtGuard)
   @Get(':id')
-  async findOneById(@Req() req: ExtendedReq, @Param('id') wishId: number) {
-    const wish = await this.wishesService.findOneById(req.user.id, wishId);
+  async findOneById(@Param('id') wishId: number) {
+    const wish = await this.wishesService.findOneById(wishId);
     return wish;
   }
 

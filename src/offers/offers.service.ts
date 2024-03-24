@@ -10,6 +10,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { Offer } from './entities/offer.entity';
 import { Wish } from 'src/wishes/entities/wish.entity';
+import { saveWithValidation } from 'src/utils/helpers';
 
 @Injectable()
 export class OffersService {
@@ -69,7 +70,9 @@ export class OffersService {
       item: createOfferDto.itemId,
     });
     offer.user = user.id;
-    const newOffer = await this.offersRepository.save(offer);
+    const newOffer = saveWithValidation(offer, (i) =>
+      this.offersRepository.save(i),
+    );
     if (!offer || !newOffer) {
       throw new InternalServerErrorException('Failed to created offer');
     }

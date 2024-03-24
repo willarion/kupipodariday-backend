@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wish } from './entities/wish.entity';
 import { User } from 'src/users/entities/user.entity';
+import { saveWithValidation } from 'src/utils/helpers';
 
 @Injectable()
 export class WishesService {
@@ -28,29 +29,26 @@ export class WishesService {
 
     const wish = this.wishesRepository.create(createWishDto);
     wish.owner = user;
-    return this.wishesRepository.save(wish);
+    return saveWithValidation(wish, (i) => this.wishesRepository.save(i));
   }
 
-  async findLatestWishByUserId(userId: number): Promise<Wish | undefined> {
-    const wish = await this.wishesRepository.findOne({
+  async findLatestWishesByUserId(userId: number): Promise<Wish[] | undefined> {
+    const wishes = await this.wishesRepository.find({
       where: { owner: { id: userId } },
       order: { createdAt: 'DESC' },
+      take: 40,
       relations: {
         owner: true,
         offers: true,
       },
     });
 
-    if (!wish) {
-      throw new NotFoundException(`No wishes found for user ID "${userId}".`);
-    }
-
-    return wish;
+    return wishes;
   }
 
-  async findOneById(userId: number, wishId: number): Promise<Wish | undefined> {
+  async findOneById(wishId: number): Promise<Wish | undefined> {
     const wish = await this.wishesRepository.findOne({
-      where: { owner: { id: userId }, id: wishId },
+      where: { id: wishId },
       relations: {
         owner: true,
         offers: true,
@@ -58,9 +56,7 @@ export class WishesService {
     });
 
     if (!wish) {
-      throw new NotFoundException(
-        `Wish with ID "${wishId}" for user ID "${userId}" not found.`,
-      );
+      throw new NotFoundException(`Wish with ID "${wishId}" is not found.`);
     }
 
     return wish;
@@ -69,7 +65,7 @@ export class WishesService {
   async findTopWishes(): Promise<Wish[] | undefined> {
     return this.wishesRepository.find({
       order: { copied: 'ASC' },
-      take: 10,
+      take: 20,
       relations: {
         owner: true,
         offers: true,

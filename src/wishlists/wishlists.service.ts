@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { Wish } from 'src/wishes/entities/wish.entity';
+import { saveWithValidation } from 'src/utils/helpers';
 
 @Injectable()
 export class WishlistsService {
@@ -48,7 +49,9 @@ export class WishlistsService {
     wishlist.owner = user;
 
     try {
-      await this.wishlistsRepository.save(wishlist);
+      await saveWithValidation(wishlist, (i) =>
+        this.wishlistsRepository.save(i),
+      );
     } catch (error) {
       throw new InternalServerErrorException('Failed to create wishlist.');
     }

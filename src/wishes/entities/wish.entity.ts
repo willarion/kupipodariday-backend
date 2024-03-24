@@ -2,13 +2,7 @@ import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Offer } from '../../offers/entities/offer.entity';
 import NumericTransformer from './wish.utils';
-import {
-  IsDecimal,
-  IsNotEmpty,
-  IsString,
-  IsUrl,
-  Length,
-} from 'class-validator';
+import { IsNumber, IsNotEmpty, IsString, IsUrl, Length } from 'class-validator';
 import { Base } from 'src/utils/base.entity';
 
 @Entity()
@@ -36,7 +30,7 @@ export class Wish extends Base {
     transformer: new NumericTransformer(),
   })
   @IsNotEmpty({ message: 'Price is required' })
-  @IsDecimal()
+  @IsNumber()
   price: number;
 
   @Column({
@@ -46,7 +40,7 @@ export class Wish extends Base {
     transformer: new NumericTransformer(),
     default: 0,
   })
-  @IsDecimal()
+  @IsNumber()
   raised: number;
 
   @ManyToOne(() => User, (user) => user.wishes)
