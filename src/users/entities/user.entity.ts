@@ -3,7 +3,7 @@ import { Offer } from '../../offers/entities/offer.entity';
 import { Wish } from 'src/wishes/entities/wish.entity';
 import { Wishlist } from 'src/wishlists/entities/wishlist.entity';
 import { Base } from 'src/utils/base.entity';
-import { IsNotEmpty, IsString, IsUrl, Length } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsUrl, Length } from 'class-validator';
 
 @Entity()
 @Unique(['username', 'email'])
@@ -26,7 +26,7 @@ export class User extends Base {
   avatar: string;
 
   @Column({ unique: true, select: false })
-  @IsString()
+  @IsEmail()
   @IsNotEmpty({ message: 'Email is required' })
   email: string;
 

@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsUrl, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  Max,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -15,8 +22,11 @@ export class CreateUserDto {
 
   @IsString()
   @Max(200)
+  @Min(2)
+  @ValidateIf((o) => o.about !== undefined)
   about?: string;
 
   @IsUrl()
+  @ValidateIf((o) => o.avatar !== undefined)
   avatar?: string;
 }

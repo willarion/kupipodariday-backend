@@ -15,7 +15,7 @@ import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import ExtendedReq from 'src/models/ExtendedReq';
 
-@Controller('wishlists')
+@Controller('wishlistlists')
 export class WishlistsController {
   constructor(private readonly wishlistsService: WishlistsService) {}
 

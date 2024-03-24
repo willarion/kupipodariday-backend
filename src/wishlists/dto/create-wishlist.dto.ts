@@ -7,6 +7,7 @@ import {
   IsUrl,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateWishlistDto {
@@ -20,7 +21,8 @@ export class CreateWishlistDto {
 
   @IsString()
   @MaxLength(1500)
-  description: string;
+  @ValidateIf((o) => o.description !== undefined)
+  description?: string;
 
   @IsArray()
   @ArrayNotEmpty()

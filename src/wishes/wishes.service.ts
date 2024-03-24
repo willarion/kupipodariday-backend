@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wish } from './entities/wish.entity';
 import { User } from 'src/users/entities/user.entity';
+import { saveWithValidation } from 'src/utils/helpers';
 
 @Injectable()
 export class WishesService {
@@ -28,7 +29,7 @@ export class WishesService {
 
     const wish = this.wishesRepository.create(createWishDto);
     wish.owner = user;
-    return this.wishesRepository.save(wish);
+    return saveWithValidation(wish, (i) => this.wishesRepository.save(i));
   }
 
   async findLatestWishByUserId(userId: number): Promise<Wish | undefined> {
